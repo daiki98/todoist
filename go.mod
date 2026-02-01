@@ -1,4 +1,4 @@
-module github.com/sachaos/todoist
+module github.com/daiki98/todoist
 
 go 1.25
 

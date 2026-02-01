@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sachaos/todoist/lib"
+	"github.com/daiki98/todoist/lib"
 )
 
 var priorityRegex = regexp.MustCompile("^p([1-4])$")

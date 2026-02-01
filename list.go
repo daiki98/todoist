@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/acarl005/stripansi"
-	todoist "github.com/sachaos/todoist/lib"
+	todoist "github.com/daiki98/todoist/lib"
 	"github.com/urfave/cli/v2"
 )
 
