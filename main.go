@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 
 	"encoding/csv"
 	"encoding/json"
@@ -39,7 +40,65 @@ func GetClient(c *cli.Context) *todoist.Client {
 	return c.App.Metadata["client"].(*todoist.Client)
 }
 
+// reorderArgs moves flags before positional arguments for commands that need it
+// This allows `todoist modify <id> -P <project>` syntax
+func reorderArgs(args []string) []string {
+	if len(args) < 3 {
+		return args
+	}
+	
+	// Check if this is a command that needs reordering (modify, add, etc.)
+	cmd := ""
+	cmdIdx := -1
+	for i, arg := range args {
+		if arg == "modify" || arg == "m" || arg == "add" || arg == "a" {
+			cmd = arg
+			cmdIdx = i
+			break
+		}
+	}
+	
+	if cmd == "" || cmdIdx == -1 || cmdIdx+1 >= len(args) {
+		return args
+	}
+	
+	// Separate flags and positional args after the command
+	afterCmd := args[cmdIdx+1:]
+	var flags []string
+	var positional []string
+	
+	i := 0
+	for i < len(afterCmd) {
+		arg := afterCmd[i]
+		if strings.HasPrefix(arg, "-") {
+			flags = append(flags, arg)
+			// Check if this flag has a value (not a boolean flag)
+			if i+1 < len(afterCmd) && !strings.HasPrefix(afterCmd[i+1], "-") {
+				// Check if it's a flag that takes a value
+				if arg == "-P" || arg == "-N" || arg == "-L" || arg == "-c" || arg == "-d" || arg == "-p" ||
+					arg == "--project-id" || arg == "--project-name" || arg == "--label-names" ||
+					arg == "--content" || arg == "--date" || arg == "--priority" {
+					i++
+					flags = append(flags, afterCmd[i])
+				}
+			}
+		} else {
+			positional = append(positional, arg)
+		}
+		i++
+	}
+	
+	// Rebuild args: program + command + flags + positional
+	result := args[:cmdIdx+1]
+	result = append(result, flags...)
+	result = append(result, positional...)
+	return result
+}
+
 func main() {
+	// Reorder arguments to allow flags after positional args
+	os.Args = reorderArgs(os.Args)
+	
 	app := cli.NewApp()
 	app.Name = "todoist"
 	app.Usage = "Todoist CLI Client"
@@ -62,7 +121,7 @@ func main() {
 		Aliases: []string{"L"},
 		Usage:   "label names (separated by ,)",
 	}
-	projectIDFlag := cli.IntFlag{
+	projectIDFlag := cli.StringFlag{
 		Name:    "project-id",
 		Aliases: []string{"P"},
 		Usage:   "project id",

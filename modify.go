@@ -50,8 +50,11 @@ func Modify(c *cli.Context) error {
 		return err
 	}
 
-	if err := client.MoveItem(context.Background(), item, projectID); err != nil {
-		return err
+	// Only move item if a project was specified
+	if projectID != "" {
+		if err := client.MoveItem(context.Background(), item, projectID); err != nil {
+			return err
+		}
 	}
 
 	return Sync(c)
